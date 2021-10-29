@@ -19,5 +19,5 @@ plt.axvline(x=kedge, color='red')
 plt.xlim([kedge-50,kedge+50])
 
 print(kedge)
-plt.savefigure(plot.png)
+plt.savefig(plot.png)
 plt.show()
