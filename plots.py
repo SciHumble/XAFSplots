@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -9,19 +10,19 @@ df=pd.read_table(
             'chie'
             ]
         )
-axesy = 'derivative'
 
 df['derivative']= df.xmu.diff(periods=-1)/df.e.diff(periods=-1)
-
 kedge = df.e[df.derivative.idxmax()]
 
-df.plot(x='e', y=['der', 'derivative'])
-plt.xlabel('Energy in [\si(\electronvolt)]')
-plt.ylabel('Absorption')
-plt.grid(axis='both')
-plt.axvline(x=kedge, color='red')
-plt.xlim([kedge-50,kedge+50])
-
-print(kedge)
-plt.savefig("plot.png")
+fig=plt.figure()
+ax=fig.add_subplot()
+ax.plot(df['e'], df['der'])
+ax.plot(df['e'], df['derivative'])
+ax.set_xlabel('Energy in (eV)')
+ax.set_ylabel('Absorption')
+ax.grid(axis='both')
+ax.axvline(x=kedge, color='red')
+ax.set_xlim([kedge-50,kedge+50])
+ax.text(kedge+1, 0.3, str(kedge))
+plt.savefig("figure.png")
 #plt.show()
