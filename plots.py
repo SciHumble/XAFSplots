@@ -4,11 +4,11 @@ import pandas as pd
 import numpy as np
 
 df=pd.read_table(
-        'Cu.dat', comment='#', delim_whitespace=True, 
-        names=[
-            'e', 'xmu', 'bkg', 'pre_edge', 'post_edge', 'der', 'sec', 'i0',
-            'chie'
-            ]
+        'Cu.dat', skiprows=39,escapechar='#', delim_whitespace=True, 
+#        names=[
+#            'e', 'xmu', 'bkg', 'pre_edge', 'post_edge', 'der', 'sec', 'i0',
+#            'chie'
+#            ]
         )
 
 df['derivative']= df.xmu.diff(periods=-1)/df.e.diff(periods=-1)
