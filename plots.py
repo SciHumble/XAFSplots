@@ -7,7 +7,7 @@ plt.switch_backend("agg") #Use the non-interactive backend in mpl to just save
 #figures and not render them in the back
 
 df = pd.read_table(
-        'Cu.xmu', skiprows=40,
+        'Cu.dat', skiprows=40,
         #escapechar='#',
         delim_whitespace=True,
         names=[
