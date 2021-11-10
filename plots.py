@@ -18,8 +18,12 @@ df = pd.read_table(
             ]
         )
 
-KedgeInDataFrame = df.e[df.der.idxmax()]
-x_offset = kedge_theory - KedgeInDataFrame
+kedge_df = df.e[df.der.idxmax()]
+line_number_kedge = df.der.idxmax()
+x_offset = kedge_theory - kedge_df
+minimum = df.der.idxmin()
+maximum = df.der.idxmax()
+scale_range = maximum - minimum
 
 fig = plt.figure()
 ax = fig.add_subplot()
@@ -29,13 +33,17 @@ ax.set_ylabel('Absorption')
 ax.grid(axis='both')
 ax.axvline(x=kedge_theory, color='red', linewidth=1)
 # Der Text wird nicht angezeigt
-ax.text(x=kedge_theory + 5, y=df.der.idxmax(), s=str(kedge_theory))
+ax.annotate(''+str(kedge_theory), xy=(kedge_theory, df.der[df.der.idxmax()]),
+           xytext=(kedge_theory-10, df.der[df.der.idxmax()]-0.05*scale_range),
+           arrowprops=dict(facecolor='black', shrink=0.05))
+print(df.der[df.der.idxmax()])
+ax.text(x=kedge_theory, y=maximum, s=str(kedge_theory))
 ax.set_xlim([kedge_theory - 50, kedge_theory + 50])
 
 for i in range(0, len(Reference_Points)):
     ax.axvline(x=Reference_Points[i], color='blue', linewidth=0.5)
 # Der Text wird nicht angezeigt
-    ax.text(x=Reference_Points[i] + 5, y=df.der.idxmax() + 10, s=str(Reference_Points[i]))
+    ax.text(Reference_Points[i], maximum + 0.00005*scale_range, str(Reference_Points[i]))
 
 filename = '%s.svg' % Element
 plt.savefig(filename)       
