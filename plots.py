@@ -1,7 +1,9 @@
 """System module."""
 import matplotlib.pyplot as plt
 import pandas as pd
+import ast  # to convert a string to a list and the string has already the format of a list.
 # import numpy as np
+import os.path
 
 plt.switch_backend("agg")  # Use the non-interactive backend in mpl to just save
 # figures and not render them in the back
@@ -15,13 +17,21 @@ class Element:
         self.name = name
         self.edge = edge
         self.reference_points = reference_points
-        self.df = pd.read_table(
-            '%s.dat' % self.name, comment='#', delim_whitespace=True,
-            names=[
-                'e', 'xmu', 'bkg', 'pre_edge', 'post_edge', 'der', 'sec', 'i0',
-                'chie'
-                ]
-            )
+        if os.path.isfile('Data/%s.xmu' % self.name) is True:
+            self.df = pd.read_table(
+                'Data/%s.xmu' % self.name, comment='#', delim_whitespace=True,
+                names=[
+                    'e', 'xmu', 'bkg', 'pre_edge', 'post_edge', 'der', 'sec', 'i0',
+                    'chie'
+                    ]
+                )
+        elif os.path.isfile('Data/%s.csv' % self.name) is True:
+            self.df = pd.read_csv(
+                'Data/%s.csv' % self.name,
+                sep=';',
+                names=['e0', 'der']
+                )
+            self.df['e'] = self.df.e + self.edge
 
     def plot_edge(self):
         """This will plot the Data in Range of +-50 eV around the theoretical K-edge and save it in a file called:
@@ -67,6 +77,23 @@ class Element:
 
         return plt.savefig('%s.svg' % self.name)
 
+    def print_information(self):
+        print(self.name)
+        print(self.edge)
+        print(self.reference_points)
+        return
 
-cu = Element('Cu', 8979, [8984.5, 8989.6])
-cu.plot_edge()
+
+df_ref = pd.read_csv(
+    'FoilsData.csv', names=['name', 'edge', 'ref'],
+    sep=';'
+)
+
+object_list = []
+for i in range(len(df_ref)):
+    obj = (df_ref.name[i], df_ref.edge[i], ast.literal_eval(df_ref.ref[i]))  # ast.literal_eval is a function to
+    # convert a string which has the format of a list to list.
+    print(obj)
+    object_list.append(obj)
+
+print(object_list)
