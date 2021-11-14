@@ -65,13 +65,13 @@ class Element:
         )
         ax.set_xlim([self.edge - 50, self.edge + 50])
 
-        for ind, i in enumerate(self.reference_points):
-            ax.axvline(i, color='blue', linewidth=0.5)
+        for ind, ref in enumerate(self.reference_points):
+            ax.axvline(str(ref), color='blue', linewidth=0.5)
             ax.text(
-                i,
+                str(ref),
                 self.df.der[self.df.der.idxmax()] + 0.095 * scale_range
                 + 0.025 * ((-1) ** ind) * scale_range,
-                str(i),
+                str(ref),
                 ha='center'
             )
 
@@ -93,7 +93,4 @@ object_list = []
 for i in range(len(df_ref)):
     obj = (df_ref.name[i], df_ref.edge[i], ast.literal_eval(df_ref.ref[i]))  # ast.literal_eval is a function to
     # convert a string which has the format of a list to list.
-    print(obj)
     object_list.append(obj)
-
-print(object_list)
