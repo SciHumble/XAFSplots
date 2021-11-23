@@ -1,5 +1,7 @@
 import pandas as pd
 
-test = input()
+df = pd.read_csv('Data/HephaestusData.csv')
 
-print(f'{test}\n{type(test)}')
+ind = df[df['name'] == 'V'].index.item()
+print(df[df['name'] == 'V'].index.item())
+print(df.at[ind, 'edge'])
