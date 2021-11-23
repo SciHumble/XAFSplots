@@ -20,7 +20,7 @@ class Element:
         self.edge_energy = edge_energy
         self.reference_points = reference_points
         if os.path.isfile('Data/{}.xmu'.format(self.name)) is True:
-            self.df = pd.read_table(
+            self.df_hepha = pd.read_table(
                 'Data/{}.xmu'.format(self.name),
                 comment='#',
                 delim_whitespace=True,
@@ -36,76 +36,102 @@ class Element:
                     'chie'
                     ]
                 )
-            self.data_origin = 'Hephaestus'
-        elif os.path.isfile('Data/{}.csv'.format(self.name)) is True:
-            self.df = pd.read_csv(
+        if os.path.isfile('Data/{}.csv'.format(self.name)) is True:
+            self.df_xafsmat = pd.read_csv(
                 'Data/{}.csv'.format(self.name),
                 sep=';',
                 names=['e0', 'der']
                 )
-            self.df['e'] = self.df.e0 + self.edge_energy
-            self.data_origin = 'XAFS Materials'
+            self.df_xafsmat['e'] = self.df_xafsmat.e0 + self.edge_energy
+        if os.path.isfile(f'Data/{self.name}.csv') is True\
+                and os.path.isfile(f'Data/{self.name}.xmu') is True:
+            self.data_origin = ['XAFS Materials', 'Hephaestus']
+        elif os.path.isfile(f'Data/{self.name}.csv') is True:
+            self.data_origin = ['XAFS Materials']
+        elif os.path.isfile(f'Data/{self.name}.xmu') is True:
+            self.data_origin = ['Hephaestus']
 
-    def plot_edge(self):
+    def plot_edge(self, datapoint_edge=None):
         """This will plot the Data in Range of +-50 eV around the theoretical
          K-edge and save it in a file called: Element.svg"""
-        id_max = self.df.der[(self.df['e'] < self.edge_energy + 7.5) &
-                             (self.df['e'] > self.edge_energy - 7.5)].idxmax()
-        # I assume that the from my data is around the region of +-7.5 eV
-        x_offset = self.edge_energy - self.df.e[id_max]
-        scale_range = self.df.der[self.df.der.idxmax()] \
-            - self.df.der[self.df.der.idxmin()]
+        for origin_name in self.data_origin:
+            edge_search = self.edge_energy
+            if origin_name == 'Hephaestus':
+                df = self.df_hepha
+                if datapoint_edge != 0:
+                    edge_search = datapoint_edge
+            elif origin_name == 'XAFS Materials':
+                df = self.df_xafsmat
 
-        xticks_list = []
-        for count in range(-5, 6):
-            xticks_list.append(count * 10)
+            margin = 5
+            id_max = df.der[(df['e'] < edge_search + margin) &
+                            (df['e'] > edge_search - margin)].idxmax()
+            # I assume that the from my data is around the region of +-5 eV
+            x_offset = self.edge_energy - df.e[id_max]
+            scale_range = df.der[df.der.idxmax()] \
+                - df.der[df.der.idxmin()]
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.plot(self.df.e + x_offset, self.df.der)
-        ax.set_xlabel('Energy (eV)')
-        ax.set_ylabel('Absorption')
-        ax.grid(axis='both')
-        ax.axvline(x=self.edge_energy, color='red', linewidth=1)
-        """
-        ax.annotate(
-            str(self.edge_energy),
-            xy=(self.edge_energy, self.df.der[id_max]),
-            xytext=(
-                self.edge_energy - 30,
-                self.df.der[self.df.der.idxmax()] - 0.35 * scale_range
-                    ),
-            arrowprops=dict(
-                facecolor='black',
-                width=0.1,
-                headwidth=3,
-                shrink=0.05
-            )
-        )
-        """
-        ax.text(
-            x=self.edge_energy - 1,
-            y=self.df.der[self.df.der.idxmax()],
-            s=str(self.edge_energy),
-            ha='right'
-        )
-        ax.set_xlim([self.edge_energy - 50, self.edge_energy + 50])
-#        ax.set_xticks([x + self.edge_energy for x in xticks_list])
-#        ax.set_xticklabels([str(x + self.edge_energy) for x in xticks_list])
+            xticks_list = []
+            for count in range(-5, 6):
+                xticks_list.append(count * 10)
 
-        for ind, reference in enumerate(self.reference_points):
-            if reference <= self.edge_energy + 50:
-                ax.axvline(x=reference, color='blue', linewidth=0.5)
-                ax.text(
-                    x=reference,
-                    y=self.df.der[self.df.der.idxmax()] + 0.095 * scale_range
-                    + 0.025 * ((-1) ** ind) * scale_range,  # I use the -1**ind
-                    # that the values of the reference points don't overlap
-                    s=str(reference),
-                    ha='center'
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            ax.plot(df.e + x_offset, df.der)
+            ax.set_xlabel('Energy (eV)')
+            ax.set_ylabel('Absorption')
+            ax.grid(axis='both')
+            ax.axvline(x=self.edge_energy, color='red', linewidth=1)
+            """
+            ax.annotate(
+                str(self.edge_energy),
+                xy=(self.edge_energy, self.df.der[id_max]),
+                xytext=(
+                    self.edge_energy - 30,
+                    self.df.der[self.df.der.idxmax()] - 0.35 * scale_range
+                        ),
+                arrowprops=dict(
+                    facecolor='black',
+                    width=0.1,
+                    headwidth=3,
+                    shrink=0.05
                 )
+            )
+            """
+            ax.text(
+                x=self.edge_energy - 1,
+                y=df.der[df.der.idxmax()],
+                s=str(self.edge_energy),
+                ha='right'
+            )
+            ax.set_xlim([self.edge_energy - 50, self.edge_energy + 50])
 
-        return plt.savefig('Plots/{}.svg'.format(self.name))
+            for ind, reference in enumerate(self.reference_points):
+                if reference <= self.edge_energy + 50:
+                    ax.axvline(x=reference, color='blue', linewidth=0.5)
+                    ax.text(
+                        x=reference,
+                        y=df.der[df.der.idxmax()] + 0.095 * scale_range
+                        + 0.025 * ((-1) ** ind) * scale_range,  # I use the
+                        # -1**ind that the values of the reference points
+                        # don't overlap
+                        s=str(reference),
+                        ha='center'
+                    )
+            ax.text(
+                x=self.edge_energy,
+                y=df.der[df.der.idxmin()] - 0.15 * scale_range,
+                s=origin_name,
+                ha='center'
+            )
+            ax.text(
+                x=self.edge_energy - 30,
+                y=df.der[df.der.idxmax()] + 0.15 * scale_range,
+                s=self.name,
+                ha='center'
+            )
+
+            return plt.savefig(f'Plots/{self.name}_{origin_name[0:4]}.svg')
 
     def print_information(self):
         print(self.name)
@@ -115,7 +141,7 @@ class Element:
 
 
 df_ref = pd.read_csv(
-    'FoilsData.csv', names=['name', 'edge', 'ref'],
+    'FoilsData.csv', names=['name', 'edge', 'ref', 'raw_edge'],
     sep=';'
 )
 
