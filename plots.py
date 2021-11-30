@@ -15,13 +15,12 @@ class Element:
      standard foils. For correct usage, please use the given Data from
      Hephaestus and import it in the same file of the plot.py file."""
 
-    def __init__(self, name: str, edge_energy: float, reference_points: list):
+    def __init__(self, name: str):
         self.name = name
-        self.edge_energy = edge_energy
-        self.reference_points = reference_points
         self.data_origin = []
+
         if os.path.isfile('Data/{}.xmu'.format(self.name)) is True:
-            self.df_hepha = pd.read_table(
+            self.df_heph = pd.read_table(
                 'Data/{}.xmu'.format(self.name),
                 comment='#',
                 delim_whitespace=True,
@@ -38,111 +37,167 @@ class Element:
                     ]
                 )
             self.data_origin.append('Hephaestus')
+            self.df_ref_heph = pd.read_csv('Data/HephaestusData.csv')
+            self.edge_heph = self.df_ref_heph.at[
+                    self.df_ref_heph[self.df_ref_heph['name'] == self.name].index.item(),
+                    'edge']
+            if self.df_ref_heph.at[self.df_ref_heph[self.df_ref_heph['name'] == self.name].index.item(), 'ref'] == '[]':
+                self.ref_heph = []
+            else:
+                self.ref_heph = [
+                    float(x) for x in
+                    self.df_ref_heph.at[
+                        self.df_ref_heph[
+                            self.df_ref_heph['name'] == self.name].index.item(),
+                        'ref'][1:-1].split(',')
+                ]
+            self.search_edge_heph = self.df_ref_heph.at[
+                self.df_ref_heph[self.df_ref_heph['name'] == self.name].index.item(),
+                'raw_edge'
+            ]
+            if self.search_edge_heph == 0:
+                self.search_edge_heph = self.edge_heph
+
         if os.path.isfile('Data/{}.csv'.format(self.name)) is True:
-            self.df_xafsmat = pd.read_csv(
+            self.df_ref_xafs = pd.read_csv('Data/XAFSMaterials.csv')
+            self.edge_xafs = self.df_ref_xafs.at[
+                self.df_ref_xafs[
+                    self.df_ref_xafs['name'] == self.name].index.item(),
+                'edge'
+            ]
+            self.edge_energy = self.edge_xafs
+            if self.df_ref_xafs.at[self.df_ref_xafs[self.df_ref_xafs[
+                                                        'name'] == self.name].index.item(), 'ref'] == '[]':
+                self.ref_xafs = []
+            else:
+                self.ref_xafs = [
+                    float(x) for x in self.df_ref_xafs.at[
+                                          self.df_ref_xafs[
+                                              self.df_ref_xafs[
+                                                  'name'] == self.name].index.item(),
+                                          'ref'
+                                      ][1:-1].split(',')
+                ]
+            self.reference_points = self.ref_xafs
+            self.df_xafs = pd.read_csv(
                 'Data/{}.csv'.format(self.name),
                 sep=';',
                 names=['e0', 'der']
                 )
-            self.df_xafsmat['e'] = self.df_xafsmat.e0 + self.edge_energy
+            self.df_xafs['e'] = self.df_xafs.e0 + self.edge_energy
             self.data_origin.append('XAFS Materials')
+            self.search_edge_xafs = self.df_ref_xafs.at[
+                    self.df_ref_xafs[self.df_ref_xafs['name'] == self.name].index.item(),
+                    'raw_edge'
+                ]
+            if self.search_edge_xafs == 0:
+                self.search_edge_xafs = self.edge_xafs
+
+        if os.path.isfile('Data/{}.xmu'.format(self.name)) is True:
+            self.edge_energy = self.edge_heph
+            self.reference_points = self.ref_heph
+
 
     def plot_edge(self):
         """This will plot the Data in Range of +-50 eV around the theoretical
          K-edge and save it in a file called: Element.svg"""
-        df_ref_heph = pd.read_csv('Data/HephaestusData.csv')
-        df_ref_xafs = pd.read_csv('Data/XAFSMaterials.csv')
-        for origin_name in self.data_origin:
-            edge_search = self.edge_energy
-            if origin_name == 'Hephaestus':
-                df = self.df_hepha
-                df_ref_heph = pd.read_csv('Data/HephaestusData.csv')
-                self.edge_energy = df_ref_heph.at[
-                    df_ref_heph[df_ref_heph['name'] == self.name].index.item(),
-                    'edge']
-                if df_ref_heph.at[df_ref_heph[df_ref_heph['name'] == self.name].index.item(), 'ref'] == '[]':
-                    self.reference_points = []
-                else:
-                    self.reference_points = [
-                        float(x) for x in
-                        df_ref_heph.at[
-                            df_ref_heph[
-                                df_ref_heph['name'] == self.name].index.item(),
-                            'ref'][1:-1].split(',')
-                    ]
-                datapoint_edge = df_ref_heph.at[
-                    df_ref_heph[df_ref_heph['name'] == self.name].index.item(),
-                    'raw_edge'
-                ]
-                if datapoint_edge != 0:
-                    edge_search = datapoint_edge
-            elif origin_name == 'XAFS Materials':
-                df = self.df_xafsmat
-                df_ref_xafs = pd.read_csv('Data/XAFSMaterials.csv')
-                self.edge_energy = df_ref_xafs.at[
-                    df_ref_xafs[df_ref_xafs['name'] == self.name].index.item(),
-                    'edge'
-                ]
-                if df_ref_xafs.at[df_ref_xafs[df_ref_xafs['name'] == self.name].index.item(), 'ref'] == '[]':
-                    self.reference_points = []
-                else:
-                    self.reference_points = [
-                        float(x) for x in df_ref_xafs.at[
-                            df_ref_xafs[
-                                df_ref_xafs['name'] == self.name].index.item(),
-                            'ref'
-                        ][1:-1].split(',')
-                    ]
-                datapoint_edge = df_ref_xafs.at[
-                    df_ref_xafs[df_ref_xafs['name'] == self.name].index.item(),
-                    'raw_edge'
-                ]
-                if datapoint_edge != 0:
-                    edge_search = datapoint_edge
 
-            margin = 5
-            id_max = df.der[(df['e'] < edge_search + margin) &
-                            (df['e'] > edge_search - margin)].idxmax()
-            # I assume that the from my data is around the region of +-5 eV
-            x_offset = self.edge_energy - df.e[id_max]
-            scale_range = df.der[df.der.idxmax()] \
-                - df.der[df.der.idxmin()]
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        margin = 5  # I assume that the from my data is around the region of
+        # +-5 eV
+        ax.set_xlabel('Energy (eV)')
+        ax.set_ylabel('Absorption')
+        ax.grid(axis='both')
+        color_heph = 'dodgerblue'
+        color_xafs = 'crimson'
 
-            xticks_list = []
-            for count in range(-5, 6):
-                xticks_list.append(count * 10)
-
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-            ax.plot(df.e + x_offset, df.der)
-            ax.set_xlabel('Energy (eV)')
-            ax.set_ylabel('Absorption')
-            ax.grid(axis='both')
-            ax.axvline(x=self.edge_energy, color='red', linewidth=1)
-            """
-            ax.annotate(
-                str(self.edge_energy),
-                xy=(self.edge_energy, self.df.der[id_max]),
-                xytext=(
-                    self.edge_energy - 30,
-                    self.df.der[self.df.der.idxmax()] - 0.35 * scale_range
-                        ),
-                arrowprops=dict(
-                    facecolor='black',
-                    width=0.1,
-                    headwidth=3,
-                    shrink=0.05
-                )
+        if self.data_origin == ['Hephaestus', 'XAFS Materials']:
+            scale_range = self.df_heph.der[self.df_heph.der.idxmax()] \
+                          - self.df_heph.der[self.df_heph.der.idxmin()]
+            # Hephaestus
+            id_max_heph = self.df_heph.der[(self.df_heph['e'] < self.search_edge_heph + margin) &
+                            (self.df_heph['e'] > self.search_edge_heph - margin)].idxmax()
+            x_offset_heph = self.edge_heph - self.df_heph.e[id_max_heph]
+            ax.plot(
+                self.df_heph.e + x_offset_heph,
+                self.df_heph.der,
+                label='Hephaestus',
+                color=color_heph
             )
-            """
+
+            # XAFS Materials
+            id_max_xafs = self.df_xafs.der[(self.df_xafs['e'] < self.search_edge_xafs + margin) &
+                            (self.df_xafs['e'] > self.search_edge_xafs - margin)].idxmax()
+            x_offset_xafs = self.edge_xafs - self.df_xafs.e[id_max_xafs]
+            ax.plot(
+                self.df_xafs.e + x_offset_xafs,
+                self.df_xafs.der / (
+                    self.df_xafs.der[self.df_xafs.der.idxmax()] /
+                    self.df_heph.der[self.df_heph.der.idxmax()]),
+                # Normalization of the values
+                label='XAFS Materials',
+                color=color_xafs
+            )
             ax.text(
                 x=self.edge_energy - 1,
-                y=df.der[df.der.idxmax()],
+                y=self.df_heph.der[self.df_heph.der.idxmax()],
                 s=str(self.edge_energy),
                 ha='right'
             )
-            ax.set_xlim([self.edge_energy - 50, self.edge_energy + 50])
 
+        elif self.data_origin == ['Hephaestus']:
+            scale_range = self.df_heph.der[self.df_heph.der.idxmax()] \
+                          - self.df_heph.der[self.df_heph.der.idxmin()]
+            id_max_heph = self.df_heph.der[
+                (self.df_heph['e'] < self.search_edge_heph + margin) &
+                (self.df_heph['e'] > self.search_edge_heph - margin)].idxmax()
+            x_offset_heph = self.edge_heph - self.df_heph.e[id_max_heph]
+            ax.plot(
+                self.df_heph.e + x_offset_heph,
+                self.df_heph.der,
+                label='Hephaestus',
+                color=color_heph
+            )
+
+        elif self.data_origin == ['XAFS Materials']:
+            scale_range = self.df_xafs.der[self.df_xafs.der.idxmax()] \
+                          - self.df_xafs.der[self.df_xafs.der.idxmin()]
+            id_max_xafs = self.df_xafs.der[
+                (self.df_xafs['e'] < self.search_edge_xafs + margin) &
+                (self.df_xafs['e'] > self.search_edge_xafs - margin)].idxmax()
+            x_offset_xafs = self.edge_xafs - self.df_xafs.e[id_max_xafs]
+            ax.plot(
+                self.df_xafs.e + x_offset_xafs,
+                self.df_xafs.der,
+                label='XAFS Materials',
+                color=color_xafs
+            )
+
+        else:
+            print(f'There is no Data for {self.name}')
+            return
+
+        ax.axvline(x=self.edge_energy, color='black', linewidth=1)
+        ax.set_xlim([self.edge_energy - 50, self.edge_energy + 50])
+        ax.legend()
+
+        if 'Hephaestus' in self.data_origin:
+
+            ax.text(
+                x=self.edge_energy - 1,
+                y=self.df_heph.der[self.df_heph.der.idxmax()],
+                s=str(self.edge_energy),
+                ha='right'
+            )
+            ax.text(
+                x=self.edge_energy - 30,
+                y=self.df_heph.der[
+                      self.df_heph.der.idxmax()] + 0.1 * scale_range,
+                s=self.name,
+                ha='center',
+                fontsize=15
+            )
             for ind, reference in enumerate(self.reference_points):
                 y_coor_offset = 0
                 if ind == 0:
@@ -150,31 +205,51 @@ class Element:
                 if ind == 2 and place_one > reference - 12:
                     y_coor_offset = 0.05 * scale_range
                 if reference <= self.edge_energy + 50:
-                    ax.axvline(x=reference, color='blue', linewidth=0.5)
+                    ax.axvline(x=reference, color='black', linewidth=0.5)
                     ax.text(
                         x=reference,
-                        y=df.der[df.der.idxmax()] + 0.095 * scale_range
-                        + 0.025 * ((-1) ** ind) * scale_range + y_coor_offset,
+                        y=self.df_heph.der[self.df_heph.der.idxmax()] + 0.095 * scale_range
+                          + 0.025 * ((
+                                         -1) ** ind) * scale_range + y_coor_offset,
                         # I use the -1**ind that the values of the reference
                         # points don't overlap
                         s=str(reference),
                         ha='center'
                     )
+        else:
             ax.text(
-                x=self.edge_energy + 50,
-                y=df.der[df.der.idxmin()] - 0.18 * scale_range,
-                s=origin_name,
-                ha='center'
+                x=self.edge_energy - 1,
+                y=self.df_xafs.der[self.df_xafs.der.idxmax()],
+                s=str(self.edge_energy),
+                ha='right'
             )
             ax.text(
                 x=self.edge_energy - 30,
-                y=df.der[df.der.idxmax()] + 0.1 * scale_range,
+                y=self.df_xafs.der[self.df_xafs.der.idxmax()] + 0.1 * scale_range,
                 s=self.name,
                 ha='center',
                 fontsize=15
             )
+            for ind, reference in enumerate(self.reference_points):
+                y_coor_offset = 0
+                if ind == 0:
+                    place_one = reference
+                if ind == 2 and place_one > reference - 12:
+                    y_coor_offset = 0.05 * scale_range
+                if reference <= self.edge_energy + 50:
+                    ax.axvline(x=reference, color='black', linewidth=0.5)
+                    ax.text(
+                        x=reference,
+                        y=self.df_xafs.der[self.df_xafs.der.idxmax()] + 0.095 * scale_range
+                          + 0.025 * ((
+                                         -1) ** ind) * scale_range + y_coor_offset,
+                        # I use the -1**ind that the values of the reference
+                        # points don't overlap
+                        s=str(reference),
+                        ha='center'
+                    )
 
-            plt.savefig(f'Plots/{self.name}_{origin_name[0:4]}.svg')
+        plt.savefig(f'Plots/{self.name}.svg')
 
         return
 
@@ -204,13 +279,5 @@ for i in range(len(df_ref)):
             [float(x) for x in df_ref.ref[i][1:-1].split(',')]
 
 for i in el_list:
-    i = Element(i, edge_dict[i], ref_dict[i])
+    i = Element(i)
     i.plot_edge()
-
-"""
-TEST_ELEMENT = 'Ti'
-test = Element(TEST_ELEMENT, edge_dict[TEST_ELEMENT], ref_dict[TEST_ELEMENT])
-print('Die Daten von {} kommen aus: \n{}'.format(
-    TEST_ELEMENT, test.data_origin
-))
-"""
